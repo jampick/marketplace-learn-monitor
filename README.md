@@ -545,7 +545,7 @@ History queries cannot reconstruct changes from before the monitor started track
 
 ## Known limitations
 
-- Change classification is heuristic unless Azure OpenAI is configured.
+- Change classification uses content-aware heuristics (retirement, deprecation, pricing, deadlines) and can be further refined with Azure OpenAI.
 - Historical summaries depend on stored digest history, not the full lifetime of Microsoft Learn content.
 - Backfill is approximate by design because it uses published Learn metadata instead of full historical page diffs.
 - The bot focuses on Marketplace/Partner Center Learn content that matches the configured URL prefixes.

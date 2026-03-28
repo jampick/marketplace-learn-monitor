@@ -100,6 +100,44 @@ const HIGH_SIGNAL_CHANGE_KEYWORDS = [
   "procurement",
 ];
 
+// Content patterns that indicate major operational impact regardless of line count
+const MAJOR_IMPACT_PATTERNS = [
+  "retire",
+  "retired",
+  "retirement",
+  "deprecated",
+  "deprecating",
+  "discontinue",
+  "end of life",
+  "no longer available",
+  "no longer supported",
+  "must migrate",
+  "breaking change",
+  "mandatory",
+  "required by",
+  "effective date",
+  "deadline",
+  "will be removed",
+  "sunset",
+  "enforcement",
+  "compliance requirement",
+  "policy change",
+];
+
+// Content patterns that indicate minor/informational changes
+const MINOR_IMPACT_PATTERNS = [
+  "preview",
+  "beta",
+  "optional",
+  "recommendation",
+  "best practice",
+  "tip",
+  "note:",
+  "example",
+  "learn more",
+  "for more information",
+];
+
 interface ContentDiffAnalysis {
   highlights: ChangeHighlight[];
   meaningfulLineCount: number;
@@ -710,6 +748,33 @@ export class MarketplaceDocsService {
           : "Partners";
 
     const contentHighlights = highlights.filter((h) => h.type === "added" || h.type === "removed");
+    const changedText = contentHighlights
+      .map((h) =>
+        h.text
+          .replace(/^Added or expanded guidance:\s*/i, "")
+          .replace(/^Removed or replaced guidance:\s*/i, ""),
+      )
+      .join(" ")
+      .toLowerCase();
+
+    // Detect specific change scenarios and produce tailored impact
+    const scenario = this.detectChangeScenario(changedText);
+    if (scenario && contentHighlights.length > 0) {
+      const subject = contentHighlights
+        .map((h) =>
+          h.text
+            .replace(/^Added or expanded guidance:\s*/i, "")
+            .replace(/^Removed or replaced guidance:\s*/i, ""),
+        )
+        .filter((s) => s.length > 8)
+        .slice(0, 1)[0];
+
+      if (subject) {
+        return `${audienceLabel} ${scenario.replace("{subject}", subject)}`;
+      }
+    }
+
+    // Fall back to content-aware but non-scenario impact
     if (contentHighlights.length > 0) {
       const subjects = contentHighlights
         .map((h) =>
@@ -754,6 +819,46 @@ export class MarketplaceDocsService {
     };
 
     return `${audienceLabel} ${categoryFallback[category]}`;
+  }
+
+  private detectChangeScenario(changedText: string): string | undefined {
+    if (/\b(?:retire|retirement|retired|sunset)\b/.test(changedText)) {
+      return "may be affected by program retirement: {subject}.";
+    }
+
+    if (/\b(?:deprecated|deprecating|end of life|will be removed)\b/.test(changedText)) {
+      return "should migrate before deprecation: {subject}.";
+    }
+
+    if (/\b(?:no longer available|no longer supported|discontinue)\b/.test(changedText)) {
+      return "should confirm no workflow dependency: {subject}.";
+    }
+
+    if (/\b(?:mandatory|required by|compliance requirement|enforcement|must)\b/.test(changedText)) {
+      return "must meet new requirement: {subject}.";
+    }
+
+    if (/\b(?:deadline|effective date)\b/.test(changedText)) {
+      return "should note deadline: {subject}.";
+    }
+
+    if (/\b(?:breaking change|migration required|must migrate)\b/.test(changedText)) {
+      return "must update integration: {subject}.";
+    }
+
+    if (/\b(?:new api|new endpoint|api version)\b/.test(changedText)) {
+      return "should evaluate API update: {subject}.";
+    }
+
+    if (/\b(?:price|pricing model|pricing change|fee)\b/.test(changedText)) {
+      return "should review pricing impact: {subject}.";
+    }
+
+    if (/\b(?:payout|payment|revenue share|invoice)\b/.test(changedText)) {
+      return "should verify billing config: {subject}.";
+    }
+
+    return undefined;
   }
 
   private buildBackfilledChangeSummary(
@@ -827,6 +932,26 @@ export class MarketplaceDocsService {
 
     if (contentAnalysis.meaningfulLineCount === 0) {
       return "cosmetic";
+    }
+
+    // Check actual content for high-impact patterns (retirement, deprecation, etc.)
+    const changedText = contentAnalysis.highlights
+      .map((h) => h.text)
+      .join(" ")
+      .toLowerCase();
+
+    const hasMajorImpactPattern = MAJOR_IMPACT_PATTERNS.some((p) => changedText.includes(p));
+    if (hasMajorImpactPattern) {
+      return "major";
+    }
+
+    // Check if all content matches minor/informational patterns
+    const hasOnlyMinorPatterns = contentAnalysis.highlights.length > 0 &&
+      contentAnalysis.highlights.every((h) =>
+        MINOR_IMPACT_PATTERNS.some((p) => h.text.toLowerCase().includes(p)),
+      );
+    if (hasOnlyMinorPatterns) {
+      return "minor";
     }
 
     if (
