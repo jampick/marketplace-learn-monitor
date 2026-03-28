@@ -1,0 +1,71 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.19/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.19",
+  "version": "{{APP_VERSION}}",
+  "id": "{{TEAMS_APP_ID}}",
+  "developer": {
+    "name": "James Pickell",
+    "websiteUrl": "https://learn.microsoft.com/",
+    "privacyUrl": "https://learn.microsoft.com/en-us/legal/termsofuse",
+    "termsOfUseUrl": "https://learn.microsoft.com/en-us/legal/termsofuse"
+  },
+  "name": {
+    "short": "Marketplace Learn Monitor",
+    "full": "Marketplace Learn Monitor"
+  },
+  "description": {
+    "short": "Tracks Microsoft Marketplace documentation changes and posts Teams digests.",
+    "full": "Monitors Microsoft Learn Marketplace and Partner Center documentation, sends daily digests, and supports direct chat queries about partner and customer impact."
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "accentColor": "#24296F",
+  "bots": [
+    {
+      "botId": "{{BOT_APP_ID}}",
+      "scopes": ["personal", "groupChat"],
+      "supportsFiles": false,
+      "isNotificationOnly": false,
+      "commandLists": [
+        {
+          "scopes": ["personal", "groupChat"],
+          "commands": [
+            {
+              "title": "history last 7 days",
+              "description": "Summarize stored Marketplace doc changes over a time window"
+            },
+            {
+              "title": "show diff",
+              "description": "Show old and new text for the latest observed change on a page"
+            },
+            {
+              "title": "sources",
+              "description": "List the Learn pages currently being tracked"
+            },
+            {
+              "title": "status",
+              "description": "Show bot version and monitoring status"
+            },
+            {
+              "title": "legend",
+              "description": "Explain the change card severity, icons, and attributes"
+            },
+            {
+              "title": "scan now",
+              "description": "[Admin] Run the doc monitor immediately"
+            },
+            {
+              "title": "backfill last 30 days",
+              "description": "[Admin] Create inferred historical entries from Learn metadata"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "permissions": ["identity", "messageTeamMembers"],
+  "validDomains": ["{{FUNCTION_HOSTNAME}}"]
+}
+

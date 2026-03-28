@@ -1,0 +1,40 @@
+{
+  "name": "marketplace-learn-monitor",
+  "version": "1.6.0",
+  "description": "Azure Functions and Teams bot for monitoring Microsoft Marketplace documentation changes.",
+  "private": true,
+  "main": "dist/src/functions/*.js",
+  "scripts": {
+    "build": "rimraf dist && tsc -p tsconfig.json",
+    "prestart": "npm run build",
+    "start": "func start --script-root dist",
+    "test": "npm run build && node --test",
+    "package:teams": "powershell -ExecutionPolicy Bypass -File .\\scripts\\package-teams-app.ps1",
+    "deploy": "powershell -ExecutionPolicy Bypass -File .\\scripts\\deploy.ps1",
+    "redeploy": "powershell -ExecutionPolicy Bypass -File .\\scripts\\redeploy.ps1"
+  },
+  "keywords": [
+    "azure-functions",
+    "teams-bot",
+    "marketplace",
+    "monitoring"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20 <23"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.11.2",
+    "@azure/storage-blob": "^12.31.0",
+    "botbuilder": "^4.23.3",
+    "diff": "^8.0.3",
+    "gray-matter": "^4.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "rimraf": "^6.1.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
