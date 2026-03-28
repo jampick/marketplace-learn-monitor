@@ -56,6 +56,25 @@ The first scan creates a baseline. After that, the bot only records actual docum
 
 Every stored change is classified for Marketplace relevance:
 
+- **Severity**
+  - `major`: program retirements, deprecations, breaking changes, pricing changes, deadlines, mandatory requirements, or large content additions/removals
+  - `minor`: new optional features, expanded guidance, informational updates
+  - `cosmetic`: metadata-only updates (commit hash, timestamp, title tweak)
+
+- **Impact**
+
+  Impact statements are scenario-specific, derived from the actual changed content:
+
+  | Content pattern | Example impact |
+  | --- | --- |
+  | Retirement/sunset | Partners may be affected by program retirement: QRP |
+  | Deprecation/end of life | Partners should migrate before deprecation |
+  | Pricing/fee change | Partners should review pricing impact |
+  | Deadline/effective date | Partners should note deadline |
+  | New requirement | Partners must meet new requirement |
+  | Breaking/migration | Partners must update integration |
+  | Generic added content | Partners should review new guidance on [subject] |
+
 - **Audience**
   - `partner`: publisher or seller-side workflows
   - `customer`: buyer-side workflows
@@ -196,14 +215,20 @@ For each page, the service compares the newly fetched document against the previ
 
 ### Relevance classification
 
-The service classifies changes using Marketplace-oriented keyword rules. The result is turned into:
+The service classifies changes in two passes:
+
+1. **Severity** — the changed content is scanned for high-impact patterns (retirement, deprecation, deadlines, pricing, breaking changes). If a pattern matches, the change is classified as `major` regardless of line count. Otherwise, line-count and heading heuristics apply.
+2. **Impact** — a scenario-specific statement is generated from the changed content. For example, a retirement produces "Partners may be affected by program retirement: [subject]" rather than a generic category description.
+
+The result is turned into:
 
 - a short summary
-- a "why it matters" explanation
+- a scenario-specific "why it matters" explanation
+- a severity classification (`major`, `minor`, `cosmetic`)
 - an audience classification
 - one or more Marketplace activity categories
 
-If Azure OpenAI is configured, the project can refine the deterministic summary with a model-generated summary while keeping the same structured output shape.
+If Azure OpenAI is configured, the project can further refine the summary while keeping the same structured output shape.
 
 ## Historical summaries
 
