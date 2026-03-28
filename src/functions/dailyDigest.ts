@@ -7,20 +7,65 @@ import {
 import { adapter, config, docsService, repository } from "../bot/runtime";
 import { buildDigestSummary } from "../services/digestFormatter";
 import { buildScanDigestCard } from "../services/adaptiveCardFormatter";
+import type { AppConfig, ConversationRegistration, ScanResult } from "../models";
 import { CardFactory } from "botbuilder";
+
+export interface DigestDeliveryPlan {
+  action: "send" | "skip-empty" | "skip-circuit-breaker" | "skip-no-bot" | "skip-no-conversations";
+  conversations: Array<{ conversation: ConversationRegistration; deliver: boolean; reason: string }>;
+}
+
+export function planDigestDelivery(
+  scanResult: ScanResult,
+  conversations: ConversationRegistration[],
+  appConfig: Pick<AppConfig, "sendEmptyDigests" | "maxChangesPerDigest" | "digestCooldownHours" | "botAppId">,
+  now = Date.now(),
+): DigestDeliveryPlan {
+  if (scanResult.changes.length === 0 && !appConfig.sendEmptyDigests) {
+    return { action: "skip-empty", conversations: [] };
+  }
+
+  if (scanResult.changes.length > appConfig.maxChangesPerDigest) {
+    return { action: "skip-circuit-breaker", conversations: [] };
+  }
+
+  if (!appConfig.botAppId) {
+    return { action: "skip-no-bot", conversations: [] };
+  }
+
+  if (conversations.length === 0) {
+    return { action: "skip-no-conversations", conversations: [] };
+  }
+
+  const cooldownMs = appConfig.digestCooldownHours * 60 * 60 * 1000;
+
+  return {
+    action: "send",
+    conversations: conversations.map((conversation) => {
+      if (conversation.lastDigestAt) {
+        const lastSent = new Date(conversation.lastDigestAt).getTime();
+        if (!Number.isNaN(lastSent) && now - lastSent < cooldownMs) {
+          return { conversation, deliver: false, reason: "cooldown" };
+        }
+      }
+      return { conversation, deliver: true, reason: "ok" };
+    }),
+  };
+}
 
 app.timer("dailyDigest", {
   schedule: config.digestSchedule,
   handler: async (_timer: Timer, context: InvocationContext): Promise<void> => {
     const scanResult = await docsService.scanNow();
+    const conversations = await repository.listConversations();
+    const plan = planDigestDelivery(scanResult, conversations, config);
 
-    if (scanResult.changes.length === 0 && !config.sendEmptyDigests) {
+    if (plan.action === "skip-empty") {
       context.log("No Marketplace documentation changes detected.");
       return;
     }
 
-    // Circuit breaker: suppress digest if change count is abnormally high
-    if (scanResult.changes.length > config.maxChangesPerDigest) {
+    if (plan.action === "skip-circuit-breaker") {
       context.warn(
         `Circuit breaker: scan produced ${scanResult.changes.length} changes (limit: ${config.maxChangesPerDigest}). ` +
         "Suppressing proactive digest. Run 'scan now' manually to review.",
@@ -28,33 +73,25 @@ app.timer("dailyDigest", {
       return;
     }
 
-    if (!config.botAppId) {
+    if (plan.action === "skip-no-bot") {
       context.warn("Skipping proactive digest because MicrosoftAppId is not configured.");
       return;
     }
 
-    const conversations = await repository.listConversations();
-    if (conversations.length === 0) {
+    if (plan.action === "skip-no-conversations") {
       context.log("No registered Teams conversations found for daily digest delivery.");
       return;
     }
 
-    const cooldownMs = config.digestCooldownHours * 60 * 60 * 1000;
-    const now = Date.now();
-
     const digestSummary = buildDigestSummary(scanResult.changes, scanResult.checkedAt);
     const digestCard = buildScanDigestCard(scanResult);
 
-    for (const conversation of conversations) {
-      // Cooldown: skip if last digest was sent too recently
-      if (conversation.lastDigestAt) {
-        const lastSent = new Date(conversation.lastDigestAt).getTime();
-        if (!Number.isNaN(lastSent) && now - lastSent < cooldownMs) {
-          context.log(
-            `Skipping digest for ${conversation.id}: cooldown (last sent ${conversation.lastDigestAt}).`,
-          );
-          continue;
-        }
+    for (const { conversation, deliver, reason } of plan.conversations) {
+      if (!deliver) {
+        context.log(
+          `Skipping digest for ${conversation.id}: ${reason} (last sent ${conversation.lastDigestAt}).`,
+        );
+        continue;
       }
 
       try {
