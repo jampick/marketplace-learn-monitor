@@ -15,7 +15,7 @@ const TEST_CHANGE: ChangeSummary = {
   categories: ["publishing"],
   summary: "Added: Retirement of the Qualified Referral Program (QRP)",
   whyItMatters:
-    "Partners should review new guidance on Retirement of the Qualified Referral Program (QRP).",
+    "Partners may be affected by program retirement: Retirement of the Qualified Referral Program (QRP).",
   highlights: [
     {
       type: "meta",
