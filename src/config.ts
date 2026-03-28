@@ -10,6 +10,8 @@ const DEFAULT_DIGEST_SCHEDULE = "0 0 14 * * *";
 const DEFAULT_STORAGE_CONTAINER = "marketplace-monitor";
 const DEFAULT_STATE_DIRECTORY = ".data";
 const DEFAULT_MAX_ANNOUNCEMENTS = 6;
+const DEFAULT_MAX_CHANGES_PER_DIGEST = 15;
+const DEFAULT_DIGEST_COOLDOWN_HOURS = 6;
 
 let cachedConfig: AppConfig | undefined;
 
@@ -75,6 +77,8 @@ export function getConfig(): AppConfig {
     storageContainer: process.env.MONITOR_STORAGE_CONTAINER?.trim() ?? DEFAULT_STORAGE_CONTAINER,
     stateDirectory: path.resolve(process.cwd(), process.env.STATE_DIRECTORY ?? DEFAULT_STATE_DIRECTORY),
     botAppId: process.env.MicrosoftAppId?.trim() ?? "",
+    maxChangesPerDigest: parseNumber(process.env.MAX_CHANGES_PER_DIGEST, DEFAULT_MAX_CHANGES_PER_DIGEST),
+    digestCooldownHours: parseNumber(process.env.DIGEST_COOLDOWN_HOURS, DEFAULT_DIGEST_COOLDOWN_HOURS),
     azureOpenAi: getAzureOpenAiConfig(),
   };
 

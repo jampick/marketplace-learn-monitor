@@ -152,6 +152,8 @@ export interface AppConfig {
   digestSchedule: string;
   sendEmptyDigests: boolean;
   maxAnnouncementPages: number;
+  maxChangesPerDigest: number;
+  digestCooldownHours: number;
   storageContainer: string;
   stateDirectory: string;
   botAppId: string;
