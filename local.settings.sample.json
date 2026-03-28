@@ -13,6 +13,8 @@
     "DIGEST_SCHEDULE": "0 0 14 * * *",
     "SEND_EMPTY_DIGESTS": "false",
     "MAX_ANNOUNCEMENT_PAGES": "6",
+    "MAX_CHANGES_PER_DIGEST": "15",
+    "DIGEST_COOLDOWN_HOURS": "6",
     "MONITOR_STORAGE_CONTAINER": "marketplace-monitor",
     "STATE_DIRECTORY": ".data",
     "AZURE_OPENAI_ENDPOINT": "",

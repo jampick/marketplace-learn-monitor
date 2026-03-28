@@ -376,6 +376,8 @@ Configuration is loaded from environment variables. A sample file is provided at
 | `DIGEST_SCHEDULE` | No | `0 0 14 * * *` | Daily digest cron schedule (UTC) |
 | `SEND_EMPTY_DIGESTS` | No | `false` | Whether to send a digest when nothing changed |
 | `MAX_ANNOUNCEMENT_PAGES` | No | `6` | Max recent announcement pages to track |
+| `MAX_CHANGES_PER_DIGEST` | No | `15` | Circuit breaker: suppress digest if change count exceeds this |
+| `DIGEST_COOLDOWN_HOURS` | No | `6` | Min hours between proactive digests per conversation |
 | `MONITOR_STORAGE_CONTAINER` | No | `marketplace-monitor` | Azure Blob container name |
 | `STATE_DIRECTORY` | No | `.data` | Local filesystem fallback directory |
 | `AZURE_OPENAI_ENDPOINT` | Optional | empty | Azure OpenAI endpoint |

@@ -19,6 +19,15 @@ app.timer("dailyDigest", {
       return;
     }
 
+    // Circuit breaker: suppress digest if change count is abnormally high
+    if (scanResult.changes.length > config.maxChangesPerDigest) {
+      context.warn(
+        `Circuit breaker: scan produced ${scanResult.changes.length} changes (limit: ${config.maxChangesPerDigest}). ` +
+        "Suppressing proactive digest. Run 'scan now' manually to review.",
+      );
+      return;
+    }
+
     if (!config.botAppId) {
       context.warn("Skipping proactive digest because MicrosoftAppId is not configured.");
       return;
@@ -30,10 +39,24 @@ app.timer("dailyDigest", {
       return;
     }
 
+    const cooldownMs = config.digestCooldownHours * 60 * 60 * 1000;
+    const now = Date.now();
+
     const digestSummary = buildDigestSummary(scanResult.changes, scanResult.checkedAt);
     const digestCard = buildScanDigestCard(scanResult);
 
     for (const conversation of conversations) {
+      // Cooldown: skip if last digest was sent too recently
+      if (conversation.lastDigestAt) {
+        const lastSent = new Date(conversation.lastDigestAt).getTime();
+        if (!Number.isNaN(lastSent) && now - lastSent < cooldownMs) {
+          context.log(
+            `Skipping digest for ${conversation.id}: cooldown (last sent ${conversation.lastDigestAt}).`,
+          );
+          continue;
+        }
+      }
+
       try {
         await adapter.continueConversation(
           conversation.conversationReference,
