@@ -749,59 +749,39 @@ export class MarketplaceDocsService {
 
     const contentHighlights = highlights.filter((h) => h.type === "added" || h.type === "removed");
     const changedText = contentHighlights
-      .map((h) =>
-        h.text
-          .replace(/^Added or expanded guidance:\s*/i, "")
-          .replace(/^Removed or replaced guidance:\s*/i, ""),
-      )
+      .map((h) => this.extractSubject(h.text))
       .join(" ")
       .toLowerCase();
 
     // Detect specific change scenarios and produce tailored impact
     const scenario = this.detectChangeScenario(changedText);
     if (scenario && contentHighlights.length > 0) {
-      const subject = contentHighlights
-        .map((h) =>
-          h.text
-            .replace(/^Added or expanded guidance:\s*/i, "")
-            .replace(/^Removed or replaced guidance:\s*/i, ""),
-        )
-        .filter((s) => s.length > 8)
-        .slice(0, 1)[0];
-
+      const subject = this.extractSubject(contentHighlights[0].text);
       if (subject) {
-        return `${audienceLabel} ${scenario.replace("{subject}", subject)}`;
+        return this.shortenForDigest(
+          `${audienceLabel} ${scenario.replace("{subject}", subject)}`,
+          120,
+        ) ?? `${audienceLabel} ${scenario.replace("{subject}", subject)}`;
       }
     }
 
-    // Fall back to content-aware but non-scenario impact
+    // Analytical impact based on change shape
     if (contentHighlights.length > 0) {
-      const subjects = contentHighlights
-        .map((h) =>
-          h.text
-            .replace(/^Added or expanded guidance:\s*/i, "")
-            .replace(/^Removed or replaced guidance:\s*/i, ""),
-        )
-        .filter((s) => s.length > 8)
-        .slice(0, 2);
+      const hasAdded = contentHighlights.some((h) => h.type === "added");
+      const hasRemoved = contentHighlights.some((h) => h.type === "removed");
+      const primarySubject = this.shortenForDigest(
+        this.extractSubject(contentHighlights[0].text),
+        60,
+      ) ?? this.extractSubject(contentHighlights[0].text);
 
-      if (subjects.length > 0) {
-        const hasAdded = contentHighlights.some((h) => h.type === "added");
-        const hasRemoved = contentHighlights.some((h) => h.type === "removed");
-
-        const subjectText = subjects.length === 1
-          ? subjects[0]
-          : `${subjects[0]}; ${subjects[1]}`;
-
+      if (primarySubject && primarySubject.length > 8) {
         if (hasAdded && hasRemoved) {
-          return `${audienceLabel} should review changed guidance on ${subjectText}.`;
+          return `${audienceLabel} should review updated guidance: ${primarySubject}.`;
         }
-
         if (hasRemoved) {
-          return `${audienceLabel} should verify removed guidance: ${subjectText}.`;
+          return `${audienceLabel} should verify workflows after removed guidance: ${primarySubject}.`;
         }
-
-        return `${audienceLabel} should review new guidance on ${subjectText}.`;
+        return `${audienceLabel} should review: ${primarySubject}.`;
       }
     }
 
@@ -819,6 +799,21 @@ export class MarketplaceDocsService {
     };
 
     return `${audienceLabel} ${categoryFallback[category]}`;
+  }
+
+  private extractSubject(highlightText: string): string {
+    const cleaned = highlightText
+      .replace(/^Added or expanded guidance:\s*/i, "")
+      .replace(/^Removed or replaced guidance:\s*/i, "")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")  // strip markdown links
+      .replace(/\*+/g, "")                        // strip markdown bold/italic
+      .replace(/^Date\**:\s*/i, "")                // strip date labels
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // Take only the first sentence or clause for conciseness
+    const firstSentence = cleaned.split(/[.;:!?\n]/).filter((s) => s.trim().length > 8)[0];
+    return (firstSentence ?? cleaned).trim();
   }
 
   private detectChangeScenario(changedText: string): string | undefined {
