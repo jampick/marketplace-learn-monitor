@@ -298,6 +298,9 @@ Supported examples:
 
 - `show diff for https://learn.microsoft.com/en-us/partner-center/marketplace-offers/`
 - `show last change for https://learn.microsoft.com/en-us/partner-center/marketplace-offers/`
+- Pasting a Learn URL from the browser (the bot resolves links by page title)
+
+Change cards also include a **Show Diff** button that triggers this command automatically for the relevant page.
 
 This command only works for **observed changes** captured after monitoring started. It does not produce exact old/new text for metadata-only backfill entries.
 

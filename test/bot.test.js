@@ -218,3 +218,48 @@ test("bot returns Adaptive Cards for rich responses", async () => {
   }
 });
 
+test("scan card includes Show Diff actions with messageBack for each change", async () => {
+  const bot = createBot({
+    docsService: {
+      async getStatus() {
+        return { trackedCount: 7, lastDigestAt: "2026-03-19T21:10:00Z" };
+      },
+      async scanNow() {
+        return {
+          checkedAt: "2026-03-24T12:00:00Z",
+          trackedUrls: ["https://learn.microsoft.com/en-us/partner-center/marketplace-offers/"],
+          changes: [{
+            id: "c1",
+            docId: "offers",
+            title: "Marketplace offers | Microsoft Learn",
+            canonicalUrl: "https://learn.microsoft.com/en-us/partner-center/marketplace-offers/",
+            severity: "major",
+            audience: "partner",
+            categories: ["publishing"],
+            summary: "Updated offer steps.",
+            whyItMatters: "Changes how offers are created.",
+            highlights: [{ type: "added", text: "New section on private offers" }],
+            detectedAt: "2026-03-24T12:00:00Z",
+          }],
+          summary: "1 change",
+          documentIndex: {},
+        };
+      },
+    },
+  });
+
+  const response = await bot.getResponse("scan now");
+  assert.ok(response.card, "Scan card should exist");
+  assert.ok(Array.isArray(response.card.actions), "Card should have actions array");
+
+  const showDiffAction = response.card.actions.find((a) => a.title === "Show Diff");
+  assert.ok(showDiffAction, "Card should have a Show Diff action");
+  assert.equal(showDiffAction.type, "Action.Submit");
+  assert.equal(showDiffAction.data.msteams.type, "messageBack");
+  assert.match(
+    showDiffAction.data.msteams.text,
+    /show diff for https:\/\/learn\.microsoft\.com/,
+    "Show Diff action should contain the page URL",
+  );
+});
+

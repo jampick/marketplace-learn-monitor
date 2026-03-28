@@ -71,6 +71,20 @@ function actionOpenUrl(title: string, url: string): object {
   return { type: "Action.OpenUrl", title, url };
 }
 
+function actionShowDiff(canonicalUrl: string): object {
+  return {
+    type: "Action.Submit",
+    title: "Show Diff",
+    data: {
+      msteams: {
+        type: "messageBack",
+        displayText: `show diff for ${canonicalUrl}`,
+        text: `show diff for ${canonicalUrl}`,
+      },
+    },
+  };
+}
+
 function wrapCard(body: object[], actions?: object[]): object {
   return {
     type: "AdaptiveCard",
@@ -201,7 +215,7 @@ const CATEGORY_ACTIVITY_LABELS: Record<ChangeCategory, string> = {
 
 // ── Single-change card block ─────────────────────────────────────────
 
-function buildChangeBlock(change: ChangeSummary, includeDetectedAt = false): object {
+function buildChangeBlock(change: ChangeSummary, includeDetectedAt = false): { block: object; action: object } {
   const severity = getEffectiveSeverity(change);
   const title = formatCompactTitle(change.title);
 
@@ -257,7 +271,8 @@ function buildChangeBlock(change: ChangeSummary, includeDetectedAt = false): obj
     textBlock(footerParts.join(" · "), { size: "small", isSubtle: true, spacing: "small" }),
   );
 
-  return container(items, { style: severityContainerStyle(severity), separator: true });
+  const changeContainer = container(items, { style: severityContainerStyle(severity), separator: true });
+  return { block: changeContainer, action: actionShowDiff(change.canonicalUrl) };
 }
 
 // ── Public card builders ─────────────────────────────────────────────
@@ -382,11 +397,14 @@ export function buildChangeHistoryCard(result: ChangeHistoryResult): object {
   }
 
   const sortedChanges = sortChangesForDisplay(result.changes);
+  const actions: object[] = [];
   for (const change of sortedChanges) {
-    body.push(buildChangeBlock(change, true));
+    const { block, action } = buildChangeBlock(change, true);
+    body.push(block);
+    actions.push(action);
   }
 
-  return wrapCard(body);
+  return wrapCard(body, actions);
 }
 
 export function buildScanDigestCard(scanResult: ScanResult): object {
@@ -411,11 +429,14 @@ export function buildScanDigestCard(scanResult: ScanResult): object {
   ];
 
   const sortedChanges = sortChangesForDisplay(scanResult.changes);
+  const actions: object[] = [];
   for (const change of sortedChanges) {
-    body.push(buildChangeBlock(change));
+    const { block, action } = buildChangeBlock(change);
+    body.push(block);
+    actions.push(action);
   }
 
-  return wrapCard(body);
+  return wrapCard(body, actions);
 }
 
 export function buildDigestHistoryCard(
@@ -451,11 +472,14 @@ export function buildDigestHistoryCard(
   ];
 
   const sortedChanges = sortChangesForDisplay(filteredChanges);
+  const actions: object[] = [];
   for (const change of sortedChanges) {
-    body.push(buildChangeBlock(change));
+    const { block, action } = buildChangeBlock(change);
+    body.push(block);
+    actions.push(action);
   }
 
-  return wrapCard(body);
+  return wrapCard(body, actions);
 }
 
 export function buildBackfillResultCard(result: BackfillResult): object {
