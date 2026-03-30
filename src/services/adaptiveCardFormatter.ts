@@ -232,6 +232,10 @@ function buildChangeBlock(change: ChangeSummary, includeDetectedAt = false): { b
     textBlock(title, { weight: "bolder", spacing: "none" }),
   ];
 
+  if (change.whyItMatters) {
+    items.push(textBlock(`**Impact:** ${change.whyItMatters}`, { size: "small", isSubtle: true }));
+  }
+
   const contentHighlights = change.highlights.filter((h) => h.type === "added" || h.type === "removed");
   const metaHighlights = change.highlights.filter((h) => h.type === "meta");
 
@@ -246,10 +250,6 @@ function buildChangeBlock(change: ChangeSummary, includeDetectedAt = false): { b
     }
   } else if (change.summary) {
     items.push(textBlock(change.summary, { size: "small" }));
-  }
-
-  if (change.whyItMatters) {
-    items.push(textBlock(`**Impact:** ${change.whyItMatters}`, { size: "small", isSubtle: true }));
   }
 
   const footerParts: string[] = [];
