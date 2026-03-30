@@ -53,6 +53,10 @@
               "description": "Explain the change card severity, icons, and attributes"
             },
             {
+              "title": "feedback",
+              "description": "Share feedback or request features via GitHub"
+            },
+            {
               "title": "scan now",
               "description": "[Admin] Run the doc monitor immediately"
             },

@@ -1,0 +1,26 @@
+name: Bug Report
+description: Report a problem with the Marketplace Learn Monitor
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the issue you encountered.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: Describe what you expected to happen instead.
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: How can we reproduce this issue?
+  - type: input
+    id: command
+    attributes:
+      label: Bot command used (if applicable)
+      placeholder: "e.g., history last 7 days"
