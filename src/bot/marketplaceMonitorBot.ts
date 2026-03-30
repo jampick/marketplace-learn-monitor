@@ -63,6 +63,7 @@ export const HELP_MESSAGE = [
   "- `sources`",
   "- `status`",
   "- `legend`",
+  "- `feedback`",
   "",
   "In a group chat, mention me with `@Marketplace Learn Monitor` before your command.",
 ].join("\n");
@@ -87,6 +88,14 @@ export const LEGEND_MESSAGE = [
   "- `both` — shared impact",
   "",
   "**Footer** — Page update date, Learn source commit, and link to the page",
+].join("\n");
+
+export const FEEDBACK_MESSAGE = [
+  "Have a bug report, feature request, or feedback?",
+  "",
+  "Open an issue on GitHub: https://github.com/jampick/marketplace-learn-monitor/issues",
+  "",
+  "Use the **Bug Report** or **Feature Request** template to get started. The maintainer reviews all submissions and prioritizes them on the project board.",
 ].join("\n");
 
 const MAX_TEAMS_TEXT_CHUNK_LENGTH = 3800;
@@ -197,6 +206,10 @@ export class MarketplaceMonitorBot extends ActivityHandler {
 
     if (normalized === "legend") {
       return { text: LEGEND_MESSAGE };
+    }
+
+    if (normalized === "feedback" || normalized === "contribute") {
+      return { text: FEEDBACK_MESSAGE };
     }
 
     if (normalized === "whoami") {
